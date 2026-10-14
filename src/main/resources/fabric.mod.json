@@ -7,5 +7,5 @@
   "environment": "client",
   "entrypoints": { "client": ["com.mizius.mcp.McpMod"] },
   "mixins": ["minecraft-mcp.mixins.json"],
-  "depends": { "fabricloader": ">=0.19.3", "minecraft": "26.2", "java": ">=25" }
+  "depends": { "fabricloader": ">=0.19.3", "minecraft": ["26.2", "26.3"], "java": ">=25" }
 }

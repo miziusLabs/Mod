@@ -11,7 +11,7 @@ base {
 }
 
 dependencies {
-    minecraft("com.mojang:minecraft:26.2")
+    minecraft("com.mojang:minecraft:${providers.gradleProperty("minecraft_version").get()}")
     implementation("net.fabricmc:fabric-loader:0.19.5")
     implementation(kotlin("stdlib"))
     include(kotlin("stdlib", "2.4.20"))

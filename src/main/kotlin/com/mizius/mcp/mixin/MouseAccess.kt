@@ -11,9 +11,6 @@ interface MouseAccess {
     @Invoker("onButton")
     fun `mcp$onButton`(window: Long, button: MouseButtonInfo, action: Int)
 
-    @Invoker("onMove")
-    fun `mcp$onMove`(window: Long, x: Double, y: Double)
-
     @Invoker("onScroll")
     fun `mcp$onScroll`(window: Long, horizontal: Double, vertical: Double)
 
