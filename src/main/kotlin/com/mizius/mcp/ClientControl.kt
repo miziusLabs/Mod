@@ -13,11 +13,9 @@ import net.minecraft.client.Screenshot
 import net.minecraft.client.gui.screens.ConnectScreen
 import net.minecraft.client.gui.screens.TitleScreen
 import net.minecraft.client.input.CharacterEvent
-import net.minecraft.client.input.KeyEvent
 import net.minecraft.client.input.MouseButtonInfo
 import net.minecraft.client.multiplayer.ServerData
 import net.minecraft.client.multiplayer.resolver.ServerAddress
-import org.lwjgl.glfw.GLFW
 import java.awt.image.BufferedImage
 import java.io.ByteArrayOutputStream
 import java.util.ArrayDeque
@@ -42,7 +40,7 @@ class ClientControl(private val mc: Minecraft) : McpServer.Tools {
     private data class Scheduled(val due: Long, val task: () -> Unit)
 
     fun active(): Boolean = System.nanoTime() < leaseUntil
-    fun held(key: Int): Boolean = key in keys
+    fun held(key: Int): Boolean = keys.any { InputCodes.nativeKey(it) == key }
 
     private fun renew() { leaseUntil = System.nanoTime() + LEASE_NANOS }
     private fun keyboard() = mc.keyboardHandler as KeyboardAccess
@@ -54,8 +52,8 @@ class ClientControl(private val mc: Minecraft) : McpServer.Tools {
         while (pending.isNotEmpty() && pending.peek().due <= System.nanoTime()) pending.remove().task()
         // Focus loss and opening screens can reset Minecraft's key mappings.
         if (active() && mc.gui.screen() == null) {
-            for (key in keys) KeyMapping.set(InputConstants.Type.KEYSYM.getOrCreate(key), true)
-            for (button in buttons) KeyMapping.set(InputConstants.Type.MOUSE.getOrCreate(button), true)
+            for (key in keys) KeyMapping.set(InputCodes.key(key), true)
+            for (button in buttons) KeyMapping.set(InputConstants.Type.MOUSE.getOrCreate(InputCodes.mouseButton(button)), true)
         }
     }
 
@@ -63,22 +61,19 @@ class ClientControl(private val mc: Minecraft) : McpServer.Tools {
         pending.add(Scheduled(System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(ms), task))
     }
 
-    private fun modifiers(): Int =
-        (if (held(GLFW.GLFW_KEY_LEFT_SHIFT) || held(GLFW.GLFW_KEY_RIGHT_SHIFT)) GLFW.GLFW_MOD_SHIFT else 0) or
-            (if (held(GLFW.GLFW_KEY_LEFT_CONTROL) || held(GLFW.GLFW_KEY_RIGHT_CONTROL)) GLFW.GLFW_MOD_CONTROL else 0) or
-            (if (held(GLFW.GLFW_KEY_LEFT_ALT) || held(GLFW.GLFW_KEY_RIGHT_ALT)) GLFW.GLFW_MOD_ALT else 0) or
-            (if (held(GLFW.GLFW_KEY_LEFT_SUPER) || held(GLFW.GLFW_KEY_RIGHT_SUPER)) GLFW.GLFW_MOD_SUPER else 0)
+    private fun modifiers(): Int = InputCodes.modifiers { it in keys }
 
     private fun keyEvent(code: Int, down: Boolean) {
+        InputCodes.nativeKey(code)
         if (down) keys.add(code) else keys.remove(code)
-        keyboard().`mcp$keyPress`(window(), if (down) GLFW.GLFW_PRESS else GLFW.GLFW_RELEASE, KeyEvent(code, 0, modifiers()))
-        if (!down) KeyMapping.set(InputConstants.Type.KEYSYM.getOrCreate(code), false)
+        keyboard().`mcp$keyPress`(window(), if (down) InputCodes.press else InputCodes.release, InputCodes.keyEvent(code, modifiers()))
+        if (!down) KeyMapping.set(InputCodes.key(code), false)
     }
 
     private fun buttonEvent(button: Int, down: Boolean) {
         if (down) buttons.add(button) else buttons.remove(button)
-        mouse().`mcp$onButton`(window(), MouseButtonInfo(button, modifiers()), if (down) GLFW.GLFW_PRESS else GLFW.GLFW_RELEASE)
-        if (!down) KeyMapping.set(InputConstants.Type.MOUSE.getOrCreate(button), false)
+        mouse().`mcp$onButton`(window(), MouseButtonInfo(InputCodes.mouseButton(button), modifiers()), if (down) InputCodes.press else InputCodes.release)
+        if (!down) KeyMapping.set(InputConstants.Type.MOUSE.getOrCreate(InputCodes.mouseButton(button)), false)
     }
 
     private fun releaseAll() {
@@ -87,9 +82,9 @@ class ClientControl(private val mc: Minecraft) : McpServer.Tools {
     }
 
     private fun move(x: Double, y: Double) {
-        // Tools use framebuffer pixels, GLFW callbacks use window logical pixels.
+        // Tools use framebuffer pixels; input callbacks use window logical pixels.
         mouse().`mcp$ignoreFirstMove`(false)
-        mouse().`mcp$onMove`(window(), x * mc.getWindow().getScreenWidth() / mc.getWindow().getWidth(),
+        MouseMovement.move(mc.mouseHandler, window(), x * mc.getWindow().getScreenWidth() / mc.getWindow().getWidth(),
             y * mc.getWindow().getScreenHeight() / mc.getWindow().getHeight())
         mc.mouseHandler.handleAccumulatedMovement()
     }
@@ -294,23 +289,6 @@ class ClientControl(private val mc: Minecraft) : McpServer.Tools {
         }
 
         @JvmStatic
-        fun keyCode(key: JsonElement?): Int {
-            require(key != null && key.isJsonPrimitive) { "Missing key" }
-            if (key.asJsonPrimitive.isNumber) {
-                val number = key.asInt
-                require(number in 32..348 && number.toDouble() == key.asDouble) { "Invalid GLFW key code" }
-                return number
-            }
-            val name = when (val name = key.asString.uppercase(Locale.ROOT).replace(' ', '_')) {
-                "CTRL", "CONTROL" -> "LEFT_CONTROL"
-                "SHIFT" -> "LEFT_SHIFT"
-                "ALT" -> "LEFT_ALT"
-                "ESC" -> "ESCAPE"
-                "RETURN" -> "ENTER"
-                else -> name
-            }
-            try { return GLFW::class.java.getField("GLFW_KEY_$name").getInt(null) }
-            catch (e: ReflectiveOperationException) { throw IllegalArgumentException("Unknown key: $name") }
-        }
+        fun keyCode(key: JsonElement?): Int = InputCodes.keyCode(key)
     }
 }

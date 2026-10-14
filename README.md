@@ -10,13 +10,13 @@
   <img alt="Kotlin" src="https://img.shields.io/badge/Kotlin-2.4.20-7F52FF?style=flat-square&amp;logo=kotlin&amp;logoColor=white">
   <img alt="Java" src="https://img.shields.io/badge/Java-%3E%3D25-ED8B00?style=flat-square&amp;logo=openjdk&amp;logoColor=white">
   <img alt="Version" src="https://img.shields.io/badge/version-1.0.0-blue?style=flat-square">
-  <img alt="Minecraft" src="https://img.shields.io/badge/Minecraft-26.2-62B47A?style=flat-square">
+  <img alt="Minecraft" src="https://img.shields.io/badge/Minecraft-26.3%20%7C%2026.2-62B47A?style=flat-square">
   <img alt="Fabric Loader" src="https://img.shields.io/badge/Fabric_Loader-%3E%3D0.19.3-DBD0B4?style=flat-square">
 </p>
 
 ## Overview
 
-Minecraft MCP is a Kotlin Fabric mod for Minecraft Java 26.2, running on Java 25. It exposes gameplay, menus, inventories, dialogs, chat and client logs through MCP at `http://127.0.0.1:8765/mcp`.
+Minecraft MCP is a Kotlin Fabric mod for Minecraft Java 26.3 and 26.2, running on Java 25. It exposes gameplay, menus, inventories, dialogs, chat and client logs through MCP at `http://127.0.0.1:8765/mcp`.
 
 The server runs inside Minecraft and is available while the client is running. Launch your Fabric instance normally, then connect an agent using Streamable HTTP. Game interactions use Minecraft's internal APIs and execute on the client thread.
 
@@ -35,7 +35,7 @@ The server runs inside Minecraft and is available while the client is running. L
 
 ## Requirements
 
-- Minecraft Java 26.2.
+- Minecraft Java 26.3 or 26.2.
 - Java 25 or newer.
 - Fabric Loader 0.19.3 or newer.
 - An MCP host that supports Streamable HTTP.
@@ -44,7 +44,7 @@ The server runs inside Minecraft and is available while the client is running. L
 ## Setup
 
 1. Build the mod from the repository root.
-2. Copy `build/libs/minecraft-mcp-1.0.0.jar` into the `mods` folder of your Fabric 26.2 instance.
+2. Copy `build/libs/minecraft-mcp-1.0.0.jar` into the `mods` folder of your Fabric 26.3 or 26.2 instance.
 3. Launch Minecraft normally.
 4. Configure your MCP host to connect to `http://127.0.0.1:8765/mcp`.
 
@@ -111,6 +111,8 @@ The server supports MCP 2026-07-28 discovery and the 2025-03-26, 2025-06-18 and 
 | `batch` | `actions`, an ordered list of `{ "tool": "key", "arguments": {...}, "delay_ms": 0 }`. Delay is optional and occurs before the action. |
 
 Mouse buttons can be `left`, `right`, `middle` or integers 0 through 7. Coordinates use screenshot pixels with the origin at the top left. The mod converts them to window coordinates, then Minecraft handles GUI scaling. For camera movement, use several moves with the desired displacement between coordinates.
+
+Key names and numeric key codes use the same GLFW conventions on both Minecraft versions. On 26.3, `F25` and `WORLD_1` return a tool error because the new input backend has no equivalent key.
 
 Several keys can stay held simultaneously. For example, hold `W` and `LEFT_SHIFT`, wait or perform other actions, then release each. Use `click` with `hold`, several `move` calls and `click` with `release` for a drag spread over tool calls. `drag` performs that sequence over multiple client ticks. Presses stay down long enough for gameplay ticks to observe them.
 
@@ -179,6 +181,6 @@ Run the test suite with Gradle.
 
 Protocol tests cover discovery, routing metadata, batch order, failure handling, request limits, browser-origin rejection and optional tokens. Log tests cover search, line limits, Unicode, scan limits and log rotation. Live gameplay checks require a working graphics driver and a Minecraft instance; multiplayer checks also require an authenticated account and a reachable server.
 
-Production code is in `src/main/kotlin`, with the entry point at `src/main/kotlin/com/mizius/mcp/McpMod.kt`. Tests are in `src/test/kotlin`. The Gradle build uses Kotlin DSL and targets JVM 25.
+Production code is in `src/main/kotlin`, with the entry point at `src/main/kotlin/com/mizius/mcp/McpMod.kt`. Tests are in `src/test/kotlin`. The Gradle build uses Kotlin DSL, targets Minecraft 26.3 by default and requires JVM 25. The same mod JAR supports Minecraft 26.2. To compile and run the tests against 26.2, use `.\gradlew.bat clean build "-Pminecraft_version=26.2"`. Use `"-Pminecraft_version=26.2"` with `runClient` to launch that version for compatibility checks.
 
-The build follows [Fabric's Minecraft 26.2 toolchain guidance](https://www.fabricmc.net/2026/06/15/262.html). Protocol behavior follows the [MCP 2026-07-28 specification](https://modelcontextprotocol.io/specification/2026-07-28).
+The build follows [Fabric's Minecraft 26.3 toolchain guidance](https://www.fabricmc.net/2026/09/15/263.html). Protocol behavior follows the [MCP 2026-07-28 specification](https://modelcontextprotocol.io/specification/2026-07-28).
