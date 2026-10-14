@@ -53,6 +53,18 @@ The server runs inside Minecraft and is available while the client is running. L
 
 The sources JAR is for development and should not go into `mods`.
 
+To build and copy the JAR as a file clipboard item, use the helper for your shell. You can then paste the file into your instance's `mods` folder using your file manager.
+
+```powershell
+.\scripts\build.ps1
+```
+
+```sh
+./scripts/build.sh
+```
+
+The PowerShell helper runs on Windows. The shell helper uses PowerShell in Git Bash, AppleScript on macOS, and `wl-copy` on Wayland or `xclip` on X11. Linux needs an active desktop session and the matching clipboard utility. Both helpers select the production JAR from Gradle's archive task and accept additional Gradle arguments, such as `--offline`.
+
 ## Configuration
 
 For MCP hosts that use the `mcpServers` configuration format, a connection can look like this. The transport setting may vary by host.
