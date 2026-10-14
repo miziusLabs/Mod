@@ -7,6 +7,7 @@
 <h4 align="center">A Fabric client mod that lets agents control Minecraft through a local MCP server.</h4>
 
 <p align="center">
+  <img alt="Kotlin" src="https://img.shields.io/badge/Kotlin-2.4.20-7F52FF?style=flat-square&amp;logo=kotlin&amp;logoColor=white">
   <img alt="Java" src="https://img.shields.io/badge/Java-%3E%3D25-ED8B00?style=flat-square&amp;logo=openjdk&amp;logoColor=white">
   <img alt="Version" src="https://img.shields.io/badge/version-1.0.0-blue?style=flat-square">
   <img alt="Minecraft" src="https://img.shields.io/badge/Minecraft-26.2-62B47A?style=flat-square">
@@ -15,7 +16,7 @@
 
 ## Overview
 
-Minecraft MCP is a Java 25 Fabric mod for Minecraft Java 26.2. It exposes gameplay, menus, inventories, dialogs, chat and client logs through MCP at `http://127.0.0.1:8765/mcp`.
+Minecraft MCP is a Kotlin Fabric mod for Minecraft Java 26.2, running on Java 25. It exposes gameplay, menus, inventories, dialogs, chat and client logs through MCP at `http://127.0.0.1:8765/mcp`.
 
 The server runs inside Minecraft and is available while the client is running. Launch your Fabric instance normally, then connect an agent using Streamable HTTP. Game interactions use Minecraft's internal APIs and execute on the client thread.
 
@@ -30,7 +31,7 @@ The server runs inside Minecraft and is available while the client is running. L
 - Runs ordered action batches with optional delays.
 - Supports background interactions where Minecraft can keep processing input and rendering.
 - Binds to IPv4 loopback and supports optional bearer-token authentication.
-- Uses Minecraft's existing dependencies, with no Fabric API requirement or companion process.
+- Bundles the Kotlin standard library, with no Fabric API requirement or companion process.
 
 ## Requirements
 
@@ -52,6 +53,8 @@ The server runs inside Minecraft and is available while the client is running. L
 ```
 
 The sources JAR is for development and should not go into `mods`.
+
+The mod JAR includes the Kotlin standard library. You do not need to install Fabric Language Kotlin separately.
 
 To build and copy the JAR as a file clipboard item, use the helper for your shell. You can then paste the file into your instance's `mods` folder using your file manager.
 
@@ -176,6 +179,6 @@ Run the test suite with Gradle.
 
 Protocol tests cover discovery, routing metadata, batch order, failure handling, request limits, browser-origin rejection and optional tokens. Log tests cover search, line limits, Unicode, scan limits and log rotation. Live gameplay checks require a working graphics driver and a Minecraft instance; multiplayer checks also require an authenticated account and a reachable server.
 
-Project entry point - `src/main/java/com/mizius/mcp/McpMod.java`.
+Production code is in `src/main/kotlin`, with the entry point at `src/main/kotlin/com/mizius/mcp/McpMod.kt`. Tests are in `src/test/kotlin`. The Gradle build uses Kotlin DSL and targets JVM 25.
 
 The build follows [Fabric's Minecraft 26.2 toolchain guidance](https://www.fabricmc.net/2026/06/15/262.html). Protocol behavior follows the [MCP 2026-07-28 specification](https://modelcontextprotocol.io/specification/2026-07-28).
