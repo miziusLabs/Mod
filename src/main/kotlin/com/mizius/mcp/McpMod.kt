@@ -10,7 +10,7 @@ class McpMod : ClientModInitializer {
         val clientControl = ClientControl(minecraft)
         control = clientControl
         try {
-            val mcpServer = McpServer(clientControl, minecraft.gameDirectory.toPath())
+            val mcpServer = McpServer(clientControl)
             server = mcpServer
             mcpServer.start()
             logger.info("Minecraft MCP listening on http://127.0.0.1:{}/mcp", mcpServer.port())

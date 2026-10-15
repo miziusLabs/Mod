@@ -7,7 +7,6 @@ import java.io.IOException
 import java.net.InetAddress
 import java.net.InetSocketAddress
 import java.nio.charset.StandardCharsets.UTF_8
-import java.nio.file.Path
 import java.security.MessageDigest
 import java.util.Locale
 import java.util.concurrent.*
@@ -17,14 +16,14 @@ class McpServer @Throws(IOException::class) constructor(
     private val tools: Tools,
     port: Int,
     private val token: String,
-    logFile: Path
+    logs: ClientLogs? = null
 ) : AutoCloseable {
     fun interface Tools {
         fun call(name: String, arguments: JsonObject): CompletableFuture<JsonObject>
     }
 
-    private val logs = ClientLogs(logFile)
     private val http = HttpServer.create(InetSocketAddress(InetAddress.getByName("127.0.0.1"), port), 16)
+    private val logs = logs ?: ClientLogs()
     private val workers: ExecutorService = ThreadPoolExecutor(
         2, 4, 30, TimeUnit.SECONDS, ArrayBlockingQueue(16),
         ThreadFactory { runnable -> Thread(runnable, "minecraft-mcp-http").apply { isDaemon = true } },
@@ -40,17 +39,12 @@ class McpServer @Throws(IOException::class) constructor(
     @Throws(IOException::class)
     constructor(tools: Tools) : this(tools, configuredPort(), configuredToken())
 
-    @Throws(IOException::class)
-    constructor(tools: Tools, gameDirectory: Path) : this(tools, configuredPort(), configuredToken(), gameDirectory.resolve("logs/latest.log"))
-
-    @Throws(IOException::class)
-    constructor(tools: Tools, port: Int, token: String) : this(tools, port, token, Path.of("logs/latest.log"))
-
     fun port(): Int = http.address.port
     fun start() = http.start()
     override fun close() {
         http.stop(0)
         workers.shutdownNow()
+        logs.close()
     }
 
     private fun handle(exchange: HttpExchange) {
@@ -173,8 +167,7 @@ class McpServer @Throws(IOException::class) constructor(
         if (remaining <= 0) return failure("Batch exceeded its 30 second execution limit")
         if (name == "get_logs") {
             return try { text(logs.read(args)) }
-            catch (e: IOException) { failure("Could not read client log: ${e.message}") }
-            catch (e: IllegalArgumentException) { failure("Could not read client log: ${e.message}") }
+            catch (e: IllegalArgumentException) { failure("Could not query client logs: ${e.message}") }
         }
         val future = tools.call(name, args)
         return try { future.get(remaining, TimeUnit.NANOSECONDS) }

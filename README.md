@@ -107,7 +107,7 @@ The server supports MCP 2026-07-28 discovery and the 2025-03-26, 2025-06-18 and 
 | `type` | `text`. Sends Unicode character events to the open interface. |
 | `execute_command` | `command`, with or without `/`. Sends a command using the connection. Server permissions still apply. |
 | `get_state` | No arguments. Returns framebuffer and GUI dimensions, screen, connection, focus, held inputs and player position. |
-| `get_logs` | Optional `queries`, an array of case-insensitive literal substrings, and `limit`, an integer from 1 to 1000, default 100. Returns the latest matching lines from `logs/latest.log`. |
+| `get_logs` | Optional `queries`, an array of case-insensitive literal substrings, and `limit`, an integer from 1 to 1000, default 100. Returns the latest matching lines captured from the running client logger. |
 | `batch` | `actions`, an ordered list of `{ "tool": "key", "arguments": {...}, "delay_ms": 0 }`. Delay is optional and occurs before the action. |
 
 Mouse buttons can be `left`, `right`, `middle` or integers 0 through 7. Coordinates use screenshot pixels with the origin at the top left. The mod converts them to window coordinates, then Minecraft handles GUI scaling. For camera movement, use several moves with the desired displacement between coordinates.
@@ -155,7 +155,7 @@ Batches contain at most 128 actions and 8 screenshots. Each delay can be up to 1
 }
 ```
 
-The response contains `lines`, `returned`, `limit`, `truncated`, `scanned_bytes`, `file_bytes` and the fixed file name `logs/latest.log`. The tool scans at most the most recent 16 MiB of the current client's log. `truncated` is true if the scan skipped older bytes or the line limit omitted matches. Missing logs return a tool error. Log searches run on HTTP workers, remain available while game actions run, and do not renew the held-input timeout. Log searches can also appear in a batch.
+The tool captures logging events directly from the running client, including exception stack traces, regardless of where a launcher stores log files. Capture starts when MCP initializes, so earlier startup messages are unavailable. The response contains `lines`, `returned`, `limit`, `truncated`, `buffered_bytes` and `source`, set to `client_logger`. The buffer retains at most 16 MiB and 65536 lines. `truncated` is true if the buffer discarded lines or the requested limit omitted matches. Individual lines exceeding 16 MiB are omitted. An empty buffer returns an empty list. Log searches run on HTTP workers, remain available while game actions run, and do not renew the held-input timeout. Log searches can also appear in a batch.
 
 ## Interaction flow
 
@@ -179,7 +179,7 @@ Run the test suite with Gradle.
 .\gradlew.bat test
 ```
 
-Protocol tests cover discovery, routing metadata, batch order, failure handling, request limits, browser-origin rejection and optional tokens. Log tests cover search, line limits, Unicode, scan limits and log rotation. Live gameplay checks require a working graphics driver and a Minecraft instance; multiplayer checks also require an authenticated account and a reachable server.
+Protocol tests cover discovery, routing metadata, batch order, failure handling, request limits, browser-origin rejection and optional tokens. Log tests cover live capture, search, line limits, Unicode, buffer limits, exception stack traces and logger reconfiguration. Live gameplay checks require a working graphics driver and a Minecraft instance; multiplayer checks also require an authenticated account and a reachable server.
 
 Production code is in `src/main/kotlin`, with the entry point at `src/main/kotlin/com/mizius/mcp/McpMod.kt`. Tests are in `src/test/kotlin`. The Gradle build uses Kotlin DSL, targets Minecraft 26.3 by default and requires JVM 25. The same mod JAR supports Minecraft 26.2. To compile and run the tests against 26.2, use `.\gradlew.bat clean build "-Pminecraft_version=26.2"`. Use `"-Pminecraft_version=26.2"` with `runClient` to launch that version for compatibility checks.
 
